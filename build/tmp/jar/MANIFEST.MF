@@ -1,9 +1,0 @@
-Manifest-Version: 1.0
-Implementation-Title: SphereMod
-Implementation-Version: 1.0
-Specification-Vendor: router
-Specification-Title: skyspheres
-Implementation-Timestamp: 2024-11-17T12:49:50-0600
-Specification-Version: 1
-Implementation-Vendor: router
-
