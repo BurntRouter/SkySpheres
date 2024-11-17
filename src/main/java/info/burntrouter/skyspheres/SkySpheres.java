@@ -30,11 +30,12 @@ import java.util.logging.Logger;
 public class SkySpheres {
     public static final String MODID = "skyspheres";
     public static final String NAME = "Sky Spheres";
-    public static final String VERSION = "1.0.5";
+    public static final String VERSION = "1.0.6";
 
     private static final Map<Biome, List<IBlockState>> BIOME_ORE_MAP = new HashMap<>();
 
     private static final Logger logger = Logger.getLogger(SkySpheres.class.getName());
+    private static final List<String> blockDenyList = Arrays.asList(SphereConfig.blockDenyList.split(","));
 
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
@@ -83,8 +84,8 @@ public class SkySpheres {
         public static float oreChance = 0.005f;
 
         @Config.Name("Block Deny List")
-        @Config.Comment("List of blocks that will not be used for sphere generation")
-        public static List<String> blockDenyList = new ArrayList<>();
+        @Config.Comment("List of blocks that will not be used for sphere generation. Separate with commas.")
+        public static String blockDenyList = "examplemod:example_block";
     }
 
     private static void initializeOreMap() {
@@ -97,7 +98,7 @@ public class SkySpheres {
                         List<ItemStack> oreStacks = OreDictionary.getOres(oreName);
                         for (ItemStack stack : oreStacks) {
                             Block block = Block.getBlockFromItem(stack.getItem());
-                            if (block != Blocks.AIR && block.getRegistryName() != null && !block.getRegistryName().getResourcePath().contains("nether") && !block.getRegistryName().getResourcePath().contains("end")) {
+                            if (block != Blocks.AIR && block.getRegistryName() != null && !block.getRegistryName().getResourcePath().contains("nether") && !block.getRegistryName().getResourcePath().contains("end") && !blockDenyList.contains(block.getRegistryName().toString())) {
                                 ores.add(block.getDefaultState());
                                 logger.info("Added " + block.getRegistryName().getResourcePath() + " to " + biome.getRegistryName().getResourcePath());
                             }
@@ -151,6 +152,9 @@ public class SkySpheres {
 
             if (isSpecialBlock(state.getBlock())) {
                 //If the block is special just use stone
+                state = Blocks.STONE.getDefaultState();
+            }
+            if (blockDenyList.contains(state.getBlock().getRegistryName())) {
                 state = Blocks.STONE.getDefaultState();
             }
             return state;
