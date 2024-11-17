@@ -4,6 +4,8 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockFalling;
 import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.init.Blocks;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
@@ -19,8 +21,11 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.fml.common.IWorldGenerator;
 import net.minecraft.world.chunk.IChunkProvider;
+import net.minecraftforge.oredict.OreDictionary;
 
 import java.util.*;
+
+import static info.burntrouter.skyspheres.SkySpheres.SphereWorldGenerator.isSpecialBlock;
 
 @Mod(modid = SkySpheres.MODID, name = SkySpheres.NAME, version = SkySpheres.VERSION)
 public class SkySpheres {
@@ -82,10 +87,16 @@ public class SkySpheres {
     private static void initializeOreMap() {
         for (Biome biome : Biome.REGISTRY) {
             List<IBlockState> ores = new ArrayList<>();
-            // Get any block with the tag "ore" in its registry name
-            for (Block block : Block.REGISTRY) {
-                if (block.getRegistryName() != null && block.getRegistryName().getResourcePath().contains("ore")) {
-                    ores.add(block.getDefaultState());
+            // Use OreDictionary to find ores for the overworld only
+            for (String oreName : OreDictionary.getOreNames()) {
+                if (oreName.startsWith("ore")) {
+                    List<ItemStack> oreStacks = OreDictionary.getOres(oreName);
+                    for (ItemStack stack : oreStacks) {
+                        Block block = Block.getBlockFromItem(stack.getItem());
+                        if (block != Blocks.AIR) {
+                            ores.add(block.getDefaultState());
+                        }
+                    }
                 }
             }
             BIOME_ORE_MAP.put(biome, ores);
@@ -94,7 +105,7 @@ public class SkySpheres {
 
     private static void initializeNonSpecialBlocks() {
         for (Block block : Block.REGISTRY) {
-            if (!SphereWorldGenerator.isSpecialBlock(block)) {
+            if (!isSpecialBlock(block)) {
                 NON_SPECIAL_BLOCKS.add(block.getDefaultState());
             }
         }
@@ -146,7 +157,15 @@ public class SkySpheres {
         }
 
         static boolean isSpecialBlock(Block block) {
-            return block instanceof BlockFalling || block.hasTileEntity(block.getDefaultState()) || block.canProvidePower(block.getDefaultState()) || block instanceof BlockLiquid;
+            return block instanceof BlockFalling || block instanceof BlockLiquid || block.canProvidePower(block.getDefaultState()) || hasTileEntity(block);
+        }
+
+        private static boolean hasTileEntity(Block block) {
+            try {
+                return block.hasTileEntity(block.getDefaultState());
+            } catch (Exception e) {
+                return false;
+            }
         }
     }
 }
