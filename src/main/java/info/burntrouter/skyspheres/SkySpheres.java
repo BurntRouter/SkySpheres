@@ -31,7 +31,7 @@ import static info.burntrouter.skyspheres.SkySpheres.SphereWorldGenerator.isSpec
 public class SkySpheres {
     public static final String MODID = "skyspheres";
     public static final String NAME = "Sky Spheres";
-    public static final String VERSION = "1.0.2";
+    public static final String VERSION = "1.0.3";
 
     private static final Map<Biome, List<IBlockState>> BIOME_ORE_MAP = new HashMap<>();
     private static final List<IBlockState> NON_SPECIAL_BLOCKS = new ArrayList<>();
