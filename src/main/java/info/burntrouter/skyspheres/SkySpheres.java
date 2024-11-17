@@ -1,4 +1,4 @@
-package info.burntrouter.spheremod;
+package info.burntrouter.skyspheres;
 
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
@@ -22,11 +22,11 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
-@Mod(modid = SphereMod.MODID, name = SphereMod.NAME, version = SphereMod.VERSION)
-public class SphereMod {
-    public static final String MODID = "spheremod";
-    public static final String NAME = "Sphere Mod";
-    public static final String VERSION = "1.0";
+@Mod(modid = SkySpheres.MODID, name = SkySpheres.NAME, version = SkySpheres.VERSION)
+public class SkySpheres {
+    public static final String MODID = "skyspheres";
+    public static final String NAME = "Sky Spheres";
+    public static final String VERSION = "1.0.1";
 
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
@@ -60,6 +60,14 @@ public class SphereMod {
         @Config.Name("Density")
         @Config.Comment("Density of sphere generation (0.0 to 1.0)")
         public static float density = 0.1f;
+
+        @Config.Name("Max Sphere Size")
+        @Config.Comment("Maximum size of the sphere")
+        public static int maxSphereSize = 32;
+
+        @Config.Name("Min Sphere Size")
+        @Config.Comment("Minimum size of the sphere")
+        public static int minSphereSize = 6;
     }
 
     public static class SphereWorldGenerator implements IWorldGenerator {
@@ -69,7 +77,9 @@ public class SphereMod {
                 if (random.nextFloat() < SphereConfig.density) {
                     int x = chunkX * 16 + random.nextInt(16);
                     int z = chunkZ * 16 + random.nextInt(16);
-                    int y = SphereConfig.minHeight + random.nextInt(SphereConfig.maxHeight - SphereConfig.minHeight);
+                    int minY = Math.min(SphereConfig.minHeight, SphereConfig.maxHeight);
+                    int maxY = Math.max(SphereConfig.minHeight, SphereConfig.maxHeight);
+                    int y = minY + random.nextInt(maxY - minY + 1);
                     generateSphere(world, new BlockPos(x, y, z), random);
                 }
             }
@@ -79,7 +89,7 @@ public class SphereMod {
             Biome biome = world.getBiome(pos);
             IBlockState state = getIBlockState(biome);
 
-            int radius = 4 + random.nextInt(4); // Random radius between 4 and 7
+            int radius = SphereConfig.minSphereSize + random.nextInt(SphereConfig.maxSphereSize - SphereConfig.minSphereSize + 1);
             Set<BlockPos> positions = getBlockPos(pos, radius);
 
             // Set blocks in the world
@@ -108,7 +118,7 @@ public class SphereMod {
             IBlockState state = biome.topBlock;
 
             if (state == Blocks.AIR.getDefaultState() || state == Blocks.WATER.getDefaultState() || state == Blocks.LAVA.getDefaultState()) {
-                state = Blocks.DIRT.getDefaultState(); // Fallback in case biome top block is air
+                state = Blocks.DIRT.getDefaultState(); // Fallback in case biome top block is air, water, or lava
             }
 
             if (state == Blocks.SAND.getDefaultState()) {

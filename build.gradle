@@ -13,9 +13,9 @@ apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
 
-version = '1.0'
-group = 'info.burntrouter.spheremod' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = 'spheremod'
+version = '1.0.1'
+group = 'info.burntrouter.skyspheres' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+archivesBaseName = 'skyspheres'
 
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
 
@@ -85,7 +85,7 @@ dependencies {
 jar {
     manifest {
         attributes([
-            "Specification-Title": "spheremod",
+            "Specification-Title": "skyspheres",
             "Specification-Vendor": "router",
             "Specification-Version": "1", // We are version 1 of ourselves
             "Implementation-Title": project.name,
