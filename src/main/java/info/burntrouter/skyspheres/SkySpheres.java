@@ -1,7 +1,9 @@
 package info.burntrouter.skyspheres;
 
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockFalling;
+import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.init.Blocks;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
@@ -24,14 +26,16 @@ import java.util.*;
 public class SkySpheres {
     public static final String MODID = "skyspheres";
     public static final String NAME = "Sky Spheres";
-    public static final String VERSION = "1.0.1";
+    public static final String VERSION = "1.0.2";
 
     private static final Map<Biome, List<IBlockState>> BIOME_ORE_MAP = new HashMap<>();
+    private static final List<IBlockState> NON_SPECIAL_BLOCKS = new ArrayList<>();
 
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
         MinecraftForge.EVENT_BUS.register(this);
         initializeOreMap();
+        initializeNonSpecialBlocks();
     }
 
     @SubscribeEvent
@@ -56,11 +60,11 @@ public class SkySpheres {
 
         @Config.Name("Maximum Height")
         @Config.Comment("Maximum height at which spheres can generate")
-        public static int maxHeight = 255;
+        public static int maxHeight = 230;
 
         @Config.Name("Density")
         @Config.Comment("Density of sphere generation (0.0 to 1.0)")
-        public static float density = 0.075f;
+        public static float density = 0.03f;
 
         @Config.Name("Max Sphere Size")
         @Config.Comment("Maximum size of the sphere")
@@ -72,28 +76,34 @@ public class SkySpheres {
 
         @Config.Name("Ore Spawn Chance")
         @Config.Comment("Chance of spawning ore (0.0 to 1.0)")
-        public static float oreChance = 0.02f;
+        public static float oreChance = 0.005f;
     }
 
     private static void initializeOreMap() {
-        // Example of initializing ores for each biome. This can be expanded as needed.
         for (Biome biome : Biome.REGISTRY) {
-            List<IBlockState> ores = Arrays.asList(
-                    Blocks.COAL_ORE.getDefaultState(),
-                    Blocks.IRON_ORE.getDefaultState(),
-                    Blocks.GOLD_ORE.getDefaultState(),
-                    Blocks.REDSTONE_ORE.getDefaultState(),
-                    Blocks.LAPIS_ORE.getDefaultState(),
-                    Blocks.DIAMOND_ORE.getDefaultState()
-            );
+            List<IBlockState> ores = new ArrayList<>();
+            // Get any block with the tag "ore" in its registry name
+            for (Block block : Block.REGISTRY) {
+                if (block.getRegistryName() != null && block.getRegistryName().getResourcePath().contains("ore")) {
+                    ores.add(block.getDefaultState());
+                }
+            }
             BIOME_ORE_MAP.put(biome, ores);
+        }
+    }
+
+    private static void initializeNonSpecialBlocks() {
+        for (Block block : Block.REGISTRY) {
+            if (!SphereWorldGenerator.isSpecialBlock(block)) {
+                NON_SPECIAL_BLOCKS.add(block.getDefaultState());
+            }
         }
     }
 
     public static class SphereWorldGenerator implements IWorldGenerator {
         @Override
         public void generate(Random random, int chunkX, int chunkZ, World world, IChunkGenerator chunkGenerator, IChunkProvider chunkProvider) {
-            if (world.provider.getDimension() == 0 && random.nextFloat() < SphereConfig.density) { // Only generate in the Overworld
+            if (world.provider.getDimension() == 0 && random.nextFloat() < SphereConfig.density) {
                 int x = chunkX * 16 + random.nextInt(16);
                 int z = chunkZ * 16 + random.nextInt(16);
                 int y = SphereConfig.minHeight + random.nextInt(SphereConfig.maxHeight - SphereConfig.minHeight + 1);
@@ -103,12 +113,11 @@ public class SkySpheres {
 
         private void generateSphere(World world, BlockPos pos, Random random) {
             Biome biome = world.getBiome(pos);
-            IBlockState state = getIBlockState(biome);
+            IBlockState state = getIBlockState(biome, random);
 
             int radius = SphereConfig.minSphereSize + random.nextInt(SphereConfig.maxSphereSize - SphereConfig.minSphereSize + 1);
             List<IBlockState> ores = BIOME_ORE_MAP.getOrDefault(biome, Collections.emptyList());
 
-            // Set blocks in the world
             BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
             for (int x = -radius; x <= radius; x++) {
                 for (int y = -radius; y <= radius; y++) {
@@ -127,17 +136,17 @@ public class SkySpheres {
             }
         }
 
-        private static IBlockState getIBlockState(Biome biome) {
-            IBlockState state = biome.topBlock;
+        private static IBlockState getIBlockState(Biome biome, Random random) {
+            IBlockState state = random.nextBoolean() ? biome.topBlock : biome.fillerBlock;
 
-            if (state == Blocks.AIR.getDefaultState() || state == Blocks.WATER.getDefaultState() || state == Blocks.LAVA.getDefaultState()) {
-                state = Blocks.DIRT.getDefaultState(); // Fallback in case biome top block is air, water, or lava
-            } else if (state == Blocks.SAND.getDefaultState()) {
-                state = Blocks.SANDSTONE.getDefaultState(); // Fallback in case biome top block is sand
-            } else if (state == Blocks.GRAVEL.getDefaultState()) {
-                state = Blocks.STONE.getDefaultState(); // Fallback in case biome top block is gravel
+            if (isSpecialBlock(state.getBlock())) {
+                state = NON_SPECIAL_BLOCKS.get(random.nextInt(NON_SPECIAL_BLOCKS.size()));
             }
             return state;
+        }
+
+        static boolean isSpecialBlock(Block block) {
+            return block instanceof BlockFalling || block.hasTileEntity(block.getDefaultState()) || block.canProvidePower(block.getDefaultState()) || block instanceof BlockLiquid;
         }
     }
 }
