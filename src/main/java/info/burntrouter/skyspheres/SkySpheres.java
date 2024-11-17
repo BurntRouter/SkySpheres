@@ -24,23 +24,22 @@ import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraftforge.oredict.OreDictionary;
 
 import java.util.*;
-
-import static info.burntrouter.skyspheres.SkySpheres.SphereWorldGenerator.isSpecialBlock;
+import java.util.logging.Logger;
 
 @Mod(modid = SkySpheres.MODID, name = SkySpheres.NAME, version = SkySpheres.VERSION)
 public class SkySpheres {
     public static final String MODID = "skyspheres";
     public static final String NAME = "Sky Spheres";
-    public static final String VERSION = "1.0.4";
+    public static final String VERSION = "1.0.5";
 
     private static final Map<Biome, List<IBlockState>> BIOME_ORE_MAP = new HashMap<>();
-    private static final List<IBlockState> NON_SPECIAL_BLOCKS = new ArrayList<>();
+
+    private static final Logger logger = Logger.getLogger(SkySpheres.class.getName());
 
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
         MinecraftForge.EVENT_BUS.register(this);
         initializeOreMap();
-        initializeNonSpecialBlocks();
     }
 
     @SubscribeEvent
@@ -82,6 +81,10 @@ public class SkySpheres {
         @Config.Name("Ore Spawn Chance")
         @Config.Comment("Chance of spawning ore (0.0 to 1.0)")
         public static float oreChance = 0.005f;
+
+        @Config.Name("Block Deny List")
+        @Config.Comment("List of blocks that will not be used for sphere generation")
+        public static List<String> blockDenyList = new ArrayList<>();
     }
 
     private static void initializeOreMap() {
@@ -96,22 +99,13 @@ public class SkySpheres {
                             Block block = Block.getBlockFromItem(stack.getItem());
                             if (block != Blocks.AIR && block.getRegistryName() != null && !block.getRegistryName().getResourcePath().contains("nether") && !block.getRegistryName().getResourcePath().contains("end")) {
                                 ores.add(block.getDefaultState());
+                                logger.info("Added " + block.getRegistryName().getResourcePath() + " to " + biome.getRegistryName().getResourcePath());
                             }
                         }
                     }
                 }
                 BIOME_ORE_MAP.put(biome, ores);
-            }
-        }
-    }
-
-    private static void initializeNonSpecialBlocks() {
-        for (Block block : Block.REGISTRY) {
-            if (block != null && block.getRegistryName() != null) {
-                String path = block.getRegistryName().getResourcePath();
-                if (!isSpecialBlock(block) && !path.contains("nether") && !path.contains("end") && !path.contains("slab")) {
-                    NON_SPECIAL_BLOCKS.add(block.getDefaultState());
-                }
+                logger.info("Added " + ores.size() + " ores to " + biome.getRegistryName().getResourcePath());
             }
         }
     }
@@ -156,7 +150,8 @@ public class SkySpheres {
             IBlockState state = random.nextBoolean() ? biome.topBlock : biome.fillerBlock;
 
             if (isSpecialBlock(state.getBlock())) {
-                state = NON_SPECIAL_BLOCKS.get(random.nextInt(NON_SPECIAL_BLOCKS.size()));
+                //If the block is special just use stone
+                state = Blocks.STONE.getDefaultState();
             }
             return state;
         }
