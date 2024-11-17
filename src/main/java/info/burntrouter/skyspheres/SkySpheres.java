@@ -31,7 +31,7 @@ import static info.burntrouter.skyspheres.SkySpheres.SphereWorldGenerator.isSpec
 public class SkySpheres {
     public static final String MODID = "skyspheres";
     public static final String NAME = "Sky Spheres";
-    public static final String VERSION = "1.0.3";
+    public static final String VERSION = "1.0.4";
 
     private static final Map<Biome, List<IBlockState>> BIOME_ORE_MAP = new HashMap<>();
     private static final List<IBlockState> NON_SPECIAL_BLOCKS = new ArrayList<>();
@@ -86,27 +86,32 @@ public class SkySpheres {
 
     private static void initializeOreMap() {
         for (Biome biome : Biome.REGISTRY) {
-            List<IBlockState> ores = new ArrayList<>();
-            // Use OreDictionary to find ores for the overworld only
-            for (String oreName : OreDictionary.getOreNames()) {
-                if (oreName.startsWith("ore")) {
-                    List<ItemStack> oreStacks = OreDictionary.getOres(oreName);
-                    for (ItemStack stack : oreStacks) {
-                        Block block = Block.getBlockFromItem(stack.getItem());
-                        if (block != Blocks.AIR) {
-                            ores.add(block.getDefaultState());
+            if (biome == null || biome.getRegistryName() == null) continue;
+            if (!biome.getRegistryName().getResourcePath().contains("nether") && !biome.getRegistryName().getResourcePath().contains("end")) {
+                List<IBlockState> ores = new ArrayList<>();
+                for (String oreName : OreDictionary.getOreNames()) {
+                    if (oreName.startsWith("ore")) {
+                        List<ItemStack> oreStacks = OreDictionary.getOres(oreName);
+                        for (ItemStack stack : oreStacks) {
+                            Block block = Block.getBlockFromItem(stack.getItem());
+                            if (block != Blocks.AIR && block.getRegistryName() != null && !block.getRegistryName().getResourcePath().contains("nether") && !block.getRegistryName().getResourcePath().contains("end")) {
+                                ores.add(block.getDefaultState());
+                            }
                         }
                     }
                 }
+                BIOME_ORE_MAP.put(biome, ores);
             }
-            BIOME_ORE_MAP.put(biome, ores);
         }
     }
 
     private static void initializeNonSpecialBlocks() {
         for (Block block : Block.REGISTRY) {
-            if (!isSpecialBlock(block)) {
-                NON_SPECIAL_BLOCKS.add(block.getDefaultState());
+            if (block != null && block.getRegistryName() != null) {
+                String path = block.getRegistryName().getResourcePath();
+                if (!isSpecialBlock(block) && !path.contains("nether") && !path.contains("end") && !path.contains("slab")) {
+                    NON_SPECIAL_BLOCKS.add(block.getDefaultState());
+                }
             }
         }
     }
