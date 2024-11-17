@@ -1,0 +1,16 @@
+[
+{
+  "modid": "spheremod",
+  "name": "Sphere Mod",
+  "description": "Sphere Mod. Makes spheres.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["Router"],
+  "credits": "jdf2",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
